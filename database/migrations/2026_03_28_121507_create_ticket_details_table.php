@@ -14,6 +14,7 @@ return new class () extends Migration {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->text('notes')->nullable();
+            $table->text('enriched_data')->nullable();
             $table->timestamps();
         });
     }

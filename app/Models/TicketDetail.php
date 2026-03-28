@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketDetail extends Model
 {
-    protected $fillable = ['ticket_id', 'notes'];
+    protected $fillable = ['ticket_id', 'notes', 'enriched_data'];
 
     /** @return BelongsTo<Ticket, $this> */
     public function ticket(): BelongsTo

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessTicketAttachment;
 use App\Models\Ticket;
 use Illuminate\Http\{RedirectResponse, Request};
 use Inertia\{Inertia, Response};
@@ -40,7 +41,11 @@ class TicketController extends Controller
             $data['attachment'] = $request->file('attachment')->store('attachments', 'public');
         }
 
-        Ticket::create($data);
+        $ticket = Ticket::create($data);
+
+        if ($ticket->attachment) {
+            ProcessTicketAttachment::dispatch($ticket);
+        }
 
         return redirect()->back();
     }

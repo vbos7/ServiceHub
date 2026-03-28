@@ -106,6 +106,20 @@ it('should be able to delete a ticket', function () {
     ]);
 });
 
+it('should delete attachment from storage when ticket is deleted', function () {
+    Storage::fake('public');
+
+    $user   = User::factory()->create();
+    $ticket = Ticket::factory()->create(['attachment' => 'attachments/file.json']);
+
+    Storage::disk('public')->put('attachments/file.json', 'content');
+
+    actingAs($user)
+        ->delete(route('tickets.destroy', $ticket));
+
+    Storage::disk('public')->assertMissing('attachments/file.json');
+});
+
 it('should delete ticket detail when ticket is deleted', function () {
     $user   = User::factory()->create();
     $ticket = Ticket::factory()->create();

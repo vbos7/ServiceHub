@@ -6,6 +6,7 @@ use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasOne};
+use Illuminate\Support\Facades\Storage;
 
 class Ticket extends Model
 {
@@ -18,6 +19,12 @@ class Ticket extends Model
     {
         static::created(function (Ticket $ticket): void {
             $ticket->ticketDetail()->create();
+        });
+
+        static::deleted(function (Ticket $ticket): void {
+            if ($ticket->attachment) {
+                Storage::disk('public')->delete($ticket->attachment);
+            }
         });
     }
 

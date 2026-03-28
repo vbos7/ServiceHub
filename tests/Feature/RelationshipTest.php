@@ -54,6 +54,15 @@ it('user has one user profile', function () {
     expect($user->userProfile)->toBeInstanceOf(UserProfile::class);
 });
 
+it('user has many tickets', function () {
+    $user = User::factory()->create();
+
+    Ticket::factory()->count(3)->for($user)->create();
+
+    expect($user->tickets)->toHaveCount(3);
+    expect($user->tickets->first())->toBeInstanceOf(Ticket::class);
+});
+
 it('deleting a company deletes its projects', function () {
     $company = Company::factory()->create();
 

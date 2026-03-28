@@ -1,0 +1,43 @@
+
+# Cores
+NC='\033[0m'
+BRed='\033[1;31m'
+BYellow='\033[1;33m'
+BGreen='\033[1;32m'
+
+COMMIT_MESSAGE=$(cat "$1")
+
+# Regex para validar Conventional Commits
+# Permite: type(scope): description ou type: description
+# Types válidos: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert
+CONVENTIONAL_COMMIT_REGEX="^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+"
+
+if ! [[ $COMMIT_MESSAGE =~ $CONVENTIONAL_COMMIT_REGEX ]]; then
+    echo -e "${BRed}❌ Erro: Mensagem de commit não segue o padrão Conventional Commits!${NC}"
+    echo ""
+    echo -e "${BYellow}Formato esperado:${NC}"
+    echo -e "  ${BGreen}type(scope): description${NC}"
+    echo ""
+    echo -e "${BYellow}Types válidos:${NC}"
+    echo -e "  ${BGreen}feat${NC}     - Nova funcionalidade"
+    echo -e "  ${BGreen}fix${NC}      - Correção de bug"
+    echo -e "  ${BGreen}docs${NC}     - Documentação"
+    echo -e "  ${BGreen}style${NC}    - Formatação, ponto e vírgula, etc"
+    echo -e "  ${BGreen}refactor${NC} - Refatoração de código"
+    echo -e "  ${BGreen}test${NC}     - Adicionar/refatorar testes"
+    echo -e "  ${BGreen}chore${NC}    - Tarefas de manutenção"
+    echo -e "  ${BGreen}perf${NC}     - Melhoria de performance"
+    echo -e "  ${BGreen}ci${NC}       - CI/CD"
+    echo -e "  ${BGreen}build${NC}    - Build system"
+    echo -e "  ${BGreen}revert${NC}   - Reverter commit"
+    echo ""
+    echo -e "${BYellow}Exemplos:${NC}"
+    echo -e "  ${BGreen}feat: add user authentication${NC}"
+    echo -e "  ${BGreen}fix(auth): resolve login bug${NC}"
+    echo -e "  ${BGreen}docs: update README${NC}"
+    echo ""
+    echo -e "${BRed}Sua mensagem:${NC} $COMMIT_MESSAGE"
+    exit 1
+fi
+
+exit 0

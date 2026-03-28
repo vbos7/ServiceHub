@@ -1,10 +1,8 @@
 <?php
 
-use App\Models\Company;
-use App\Models\User;
+use App\Models\{Company, User};
 
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\{actingAs, assertDatabaseHas};
 
 it('should be able to create a company', function () {
     $user = User::factory()->create();
@@ -28,8 +26,25 @@ it('should be able to list companies', function () {
     actingAs($user)
         ->get(route('companies.index'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('Companies/Index')
-            ->has('companies', 3)
+        ->assertInertia(
+            fn ($page) => $page
+                ->component('Companies/Index')
+                ->has('companies', 3)
         );
+});
+
+it('should be able to update a company', function () {
+    $user    = User::factory()->create();
+    $company = Company::factory()->create(['name' => 'Nome Antigo']);
+
+    actingAs($user)
+        ->put(route('companies.update', $company), [
+            'name' => 'Nome Atualizado',
+        ])
+        ->assertRedirect();
+
+    assertDatabaseHas('companies', [
+        'id'   => $company->id,
+        'name' => 'Nome Atualizado',
+    ]);
 });

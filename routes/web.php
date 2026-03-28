@@ -12,6 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+    Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

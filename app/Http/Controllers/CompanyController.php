@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\{RedirectResponse, Request};
+use Inertia\{Inertia, Response};
 
 class CompanyController extends Controller
 {
@@ -15,6 +13,15 @@ class CompanyController extends Controller
         return Inertia::render('Companies/Index', [
             'companies' => Company::all(),
         ]);
+    }
+
+    public function update(Request $request, Company $company): RedirectResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+
+        $company->update($request->only('name'));
+
+        return redirect()->back();
     }
 
     public function store(Request $request): RedirectResponse

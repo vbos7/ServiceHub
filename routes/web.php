@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\{CompanyController, ProjectController, TicketController};
+use App\Http\Controllers\{CompanyController, ProjectController, TicketController, UserProfileController};
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -23,6 +23,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
     Route::put('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
     Route::delete('tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+    Route::get('user-profile', [UserProfileController::class, 'show'])->name('user-profile.show');
+    Route::put('user-profile', [UserProfileController::class, 'update'])->name('user-profile.update');
 });
 
 require __DIR__ . '/settings.php';

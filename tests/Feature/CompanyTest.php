@@ -2,7 +2,7 @@
 
 use App\Models\{Company, User};
 
-use function Pest\Laravel\{actingAs, assertDatabaseHas};
+use function Pest\Laravel\{actingAs, assertDatabaseHas, assertDatabaseMissing};
 
 it('should be able to create a company', function () {
     $user = User::factory()->create();
@@ -47,4 +47,27 @@ it('should be able to update a company', function () {
         'id'   => $company->id,
         'name' => 'Nome Atualizado',
     ]);
+});
+
+it('should be able to delete a company', function () {
+    $user    = User::factory()->create();
+    $company = Company::factory()->create();
+
+    actingAs($user)
+        ->delete(route('companies.destroy', $company))
+        ->assertRedirect();
+
+    assertDatabaseMissing('companies', [
+        'id' => $company->id,
+    ]);
+});
+
+it('should require a name to create a company', function () {
+    $user = User::factory()->create();
+
+    actingAs($user)
+        ->post(route('companies.store'), [
+            'name' => '',
+        ])
+        ->assertSessionHasErrors(['name']);
 });

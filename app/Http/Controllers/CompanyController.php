@@ -15,6 +15,13 @@ class CompanyController extends Controller
         ]);
     }
 
+    public function destroy(Company $company): RedirectResponse
+    {
+        $company->delete();
+
+        return redirect()->back();
+    }
+
     public function update(Request $request, Company $company): RedirectResponse
     {
         $request->validate(['name' => 'required|string|max:255']);

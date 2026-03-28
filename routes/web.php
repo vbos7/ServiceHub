@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\{CompanyController, ProjectController};
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
     Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
     Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
+    Route::post('projects', [ProjectController::class, 'store'])->name('projects.store');
 });
 
 require __DIR__ . '/settings.php';

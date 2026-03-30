@@ -19,7 +19,7 @@ A service order management system built with **Laravel 13**, **Inertia.js v3**, 
 - **Companies** — CRUD with cascade to projects
 - **Projects** — CRUD, belong to a company
 - **Tickets** — CRUD with optional file attachment (`.json` / `.txt`); background job enriches ticket details on upload
-- **User Profile** — 1:1 profile (phone, position) auto-created on registration
+- **Ticket Detail** — Technical notes editable per ticket; `enriched_data` populated automatically by the background job
 - **Auth** — Registration, login, logout, password reset (Laravel Fortify)
 - **Notifications** — Email notification when ticket attachment processing completes
 - **API Docs** — Swagger UI at `/api-docs`
@@ -27,20 +27,23 @@ A service order management system built with **Laravel 13**, **Inertia.js v3**, 
 ## Quick Start (Docker)
 
 ```bash
-# 1. Copy environment file
 cp .env.example .env
-
-# 2. Generate an app key and set it in .env
-php -r "echo 'APP_KEY=base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
-# Then add the output to .env as APP_KEY=...
-
-# 3. Build and start
 docker compose up --build
 ```
 
+That's it. The container will:
+1. Install dependencies and build assets
+2. Run migrations automatically
+3. Seed demo data (companies, projects, tickets)
+
 The app will be available at **http://localhost:8080**.
 
-Migrations run automatically on container start.
+### Demo credentials
+
+| Field | Value |
+|-------|-------|
+| Email | `demo@servicehub.test` |
+| Password | `password` |
 
 ## Local Development
 
@@ -88,6 +91,7 @@ php artisan test
 ```
 
 All tests use an in-memory SQLite database (no external services required).
+Current coverage: **83 tests, 257 assertions**.
 
 ## Architecture
 
@@ -99,9 +103,10 @@ Company
         └── has many Tickets
               ├── belongs to User
               └── has one TicketDetail  ← auto-created on Ticket::created
-
+                    ├── notes           ← manually editable
+                    └── enriched_data   ← filled by ProcessTicketAttachment job
 User
-  └── has one UserProfile  ← auto-created on User::created
+  └── has one UserProfile  ← auto-created on User::created (phone, position)
 ```
 
 ### Background Job
@@ -158,13 +163,14 @@ The raw OpenAPI 3.0 spec is at `public/api-docs/openapi.yaml`.
 
 ```
 app/
-  Http/Controllers/     # CompanyController, ProjectController, TicketController, UserProfileController
+  Http/Controllers/     # CompanyController, ProjectController, TicketController,
+                        # TicketDetailController, UserProfileController
   Jobs/                 # ProcessTicketAttachment
   Models/               # Company, Project, Ticket, TicketDetail, User, UserProfile
   Notifications/        # TicketDetailEnriched
 resources/
   js/
-    pages/              # Companies/, Projects/, Tickets/, Profile/
+    pages/              # Companies/, Projects/, Tickets/, settings/
     components/         # AppSidebar, AppToast, ui/
     layouts/            # AppSidebarLayout
   views/
@@ -176,6 +182,9 @@ docker/
   start.sh
 public/
   api-docs/             # openapi.yaml + Swagger UI
+routes/
+  web.php               # application routes (grouped by resource)
+  settings.php          # profile, password, appearance, security
 tests/
   Feature/              # CompanyTest, ProjectTest, TicketTest, UserProfileTest,
                         # ProcessTicketAttachmentTest, RelationshipTest

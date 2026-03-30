@@ -15,11 +15,13 @@ class CompanyController extends Controller
         ]);
     }
 
-    public function destroy(Company $company): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $company->delete();
+        $request->validate(['name' => 'required|string|max:255']);
 
-        return redirect()->back();
+        Company::create($request->only('name'));
+
+        return redirect()->back()->with('success', 'Company created successfully.');
     }
 
     public function update(Request $request, Company $company): RedirectResponse
@@ -28,15 +30,13 @@ class CompanyController extends Controller
 
         $company->update($request->only('name'));
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Company updated successfully.');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function destroy(Company $company): RedirectResponse
     {
-        $request->validate(['name' => 'required|string|max:255']);
+        $company->delete();
 
-        Company::create($request->only('name'));
-
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Company deleted successfully.');
     }
 }

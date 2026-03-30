@@ -1,0 +1,647 @@
+openapi: 3.0.3
+info:
+  title: ServiceHub API
+  description: |
+    ServiceHub is a service order management system.
+    All endpoints require authentication (session cookie) unless marked otherwise.
+    Responses follow the Inertia.js protocol — HTML on initial visit, JSON on subsequent requests.
+  version: 1.0.0
+  contact:
+    name: ServiceHub
+
+servers:
+  - url: http://localhost:8080
+    description: Docker (local)
+  - url: http://localhost:8000
+    description: Local dev server
+
+tags:
+  - name: Auth
+    description: Registration, login, logout
+  - name: Companies
+    description: Company management
+  - name: Projects
+    description: Project management
+  - name: Tickets
+    description: Support ticket management
+  - name: Ticket Detail
+    description: Technical notes on a ticket (manually editable; enriched_data is filled by the background job)
+  - name: User Profile
+    description: Logged-in user profile
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: servicehub_session
+
+  schemas:
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Acme Corp
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        company_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Website Redesign
+        company:
+          $ref: '#/components/schemas/Company'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        project_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Login page broken
+        description:
+          type: string
+          example: Users cannot log in after the last deploy.
+        attachment:
+          type: string
+          nullable: true
+          example: attachments/report.json
+        project:
+          $ref: '#/components/schemas/Project'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TicketDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        ticket_id:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        enriched_data:
+          type: string
+          nullable: true
+          description: JSON string with enriched data from the attachment processor job
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        phone:
+          type: string
+          nullable: true
+          example: "+55 11 91234-5678"
+        position:
+          type: string
+          nullable: true
+          example: Support Engineer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The name field is required.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            name: ["The name field is required."]
+
+security:
+  - sessionCookie: []
+
+paths:
+  # ---------- Auth ----------
+
+  /register:
+    get:
+      tags: [Auth]
+      summary: Show registration form
+      security: []
+      responses:
+        '200':
+          description: Registration page (Inertia)
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name:
+                  type: string
+                  example: Jane Doe
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                password:
+                  type: string
+                  format: password
+                  example: secret123
+                password_confirmation:
+                  type: string
+                  format: password
+                  example: secret123
+      responses:
+        '302':
+          description: Redirect to dashboard on success
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /login:
+    get:
+      tags: [Auth]
+      summary: Show login form
+      security: []
+      responses:
+        '200':
+          description: Login page (Inertia)
+    post:
+      tags: [Auth]
+      summary: Authenticate user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                password:
+                  type: string
+                  format: password
+                  example: secret123
+      responses:
+        '302':
+          description: Redirect to dashboard on success
+        '422':
+          description: Invalid credentials
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Log out the current user
+      responses:
+        '302':
+          description: Redirect to login page
+
+  # ---------- Companies ----------
+
+  /companies:
+    get:
+      tags: [Companies]
+      summary: List all companies
+      responses:
+        '200':
+          description: Companies index page (Inertia)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  companies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Company'
+    post:
+      tags: [Companies]
+      summary: Create a new company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  example: Acme Corp
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /companies/{company}:
+    put:
+      tags: [Companies]
+      summary: Update a company
+      parameters:
+        - name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  example: Acme Corp Updated
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '404':
+          description: Company not found
+        '422':
+          description: Validation error
+    delete:
+      tags: [Companies]
+      summary: Delete a company
+      parameters:
+        - name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '404':
+          description: Company not found
+
+  # ---------- Projects ----------
+
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List all projects
+      responses:
+        '200':
+          description: Projects index page (Inertia)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  companies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Company'
+    post:
+      tags: [Projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, company_id]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  example: Website Redesign
+                company_id:
+                  type: integer
+                  example: 1
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '422':
+          description: Validation error
+
+  /projects/{project}:
+    put:
+      tags: [Projects]
+      summary: Update a project
+      parameters:
+        - name: project
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, company_id]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                company_id:
+                  type: integer
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '404':
+          description: Project not found
+        '422':
+          description: Validation error
+    delete:
+      tags: [Projects]
+      summary: Delete a project
+      parameters:
+        - name: project
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '404':
+          description: Project not found
+
+  # ---------- Tickets ----------
+
+  /tickets:
+    get:
+      tags: [Tickets]
+      summary: List all tickets
+      responses:
+        '200':
+          description: Tickets index page (Inertia)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tickets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ticket'
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+    post:
+      tags: [Tickets]
+      summary: Create a new ticket
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, description, project_id]
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                  example: Login page broken
+                description:
+                  type: string
+                  example: Users cannot log in after the last deploy.
+                project_id:
+                  type: integer
+                  example: 1
+                attachment:
+                  type: string
+                  format: binary
+                  description: Optional .json or .txt file with additional context
+      responses:
+        '302':
+          description: Redirect back with success flash. If attachment was provided, a background job (ProcessTicketAttachment) is dispatched.
+        '422':
+          description: Validation error
+
+  /tickets/{ticket}:
+    get:
+      tags: [Tickets]
+      summary: Show a single ticket
+      parameters:
+        - name: ticket
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ticket detail page (Inertia)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    allOf:
+                      - $ref: '#/components/schemas/Ticket'
+                      - type: object
+                        properties:
+                          ticket_detail:
+                            $ref: '#/components/schemas/TicketDetail'
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        '404':
+          description: Ticket not found
+    put:
+      tags: [Tickets]
+      summary: Update a ticket
+      parameters:
+        - name: ticket
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description, project_id]
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                project_id:
+                  type: integer
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '404':
+          description: Ticket not found
+        '422':
+          description: Validation error
+    delete:
+      tags: [Tickets]
+      summary: Delete a ticket
+      description: Deletes the ticket and its storage attachment (if any).
+      parameters:
+        - name: ticket
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '404':
+          description: Ticket not found
+
+  # ---------- Ticket Detail ----------
+
+  /tickets/{ticket}/detail:
+    put:
+      tags: [Ticket Detail]
+      summary: Update technical notes on a ticket
+      description: |
+        Updates the `notes` field of the TicketDetail record associated with the ticket.
+        `enriched_data` is read-only — it is populated automatically by the `ProcessTicketAttachment` background job when a ticket has an attachment.
+      parameters:
+        - name: ticket
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  nullable: true
+                  example: "Investigated and resolved. Root cause was a misconfigured ENV variable."
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Ticket not found
+        '422':
+          description: Validation error
+
+  # ---------- User Profile ----------
+
+  /user-profile:
+    get:
+      tags: [User Profile]
+      summary: Show the current user's profile
+      responses:
+        '200':
+          description: Profile page (Inertia)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userProfile:
+                    $ref: '#/components/schemas/UserProfile'
+    put:
+      tags: [User Profile]
+      summary: Update the current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  maxLength: 20
+                  nullable: true
+                  example: "+55 11 91234-5678"
+                position:
+                  type: string
+                  maxLength: 255
+                  nullable: true
+                  example: Support Engineer
+      responses:
+        '302':
+          description: Redirect back with success flash
+        '422':
+          description: Validation error

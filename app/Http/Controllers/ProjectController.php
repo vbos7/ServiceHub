@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
+use App\Models\{Company, Project};
 use Illuminate\Http\{RedirectResponse, Request};
 use Inertia\{Inertia, Response};
 
@@ -11,7 +11,8 @@ class ProjectController extends Controller
     public function index(): Response
     {
         return Inertia::render('Projects/Index', [
-            'projects' => Project::all(),
+            'projects'  => Project::with('company')->get(),
+            'companies' => Company::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -24,7 +25,7 @@ class ProjectController extends Controller
 
         Project::create($request->only('name', 'company_id'));
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Project created successfully.');
     }
 
     public function update(Request $request, Project $project): RedirectResponse
@@ -36,13 +37,13 @@ class ProjectController extends Controller
 
         $project->update($request->only('name', 'company_id'));
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Project updated successfully.');
     }
 
     public function destroy(Project $project): RedirectResponse
     {
         $project->delete();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Project deleted successfully.');
     }
 }

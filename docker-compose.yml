@@ -1,0 +1,27 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      APP_NAME: ServiceHub
+      APP_ENV: production
+      APP_DEBUG: false
+      APP_KEY: ${APP_KEY}
+      APP_URL: http://localhost:8080
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      MAIL_MAILER: log
+      FILESYSTEM_DISK: public
+    volumes:
+      - sqlite_data:/var/www/html/database
+      - storage_data:/var/www/html/storage/app
+
+volumes:
+  sqlite_data:
+  storage_data:

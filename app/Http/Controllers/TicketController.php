@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessTicketAttachment;
-use App\Models\Ticket;
+use App\Models\{Project, Ticket};
 use Illuminate\Http\{RedirectResponse, Request};
 use Inertia\{Inertia, Response};
 
@@ -12,14 +12,16 @@ class TicketController extends Controller
     public function index(): Response
     {
         return Inertia::render('Tickets/Index', [
-            'tickets' => Ticket::all(),
+            'tickets'  => Ticket::with(['project', 'user'])->latest()->get(),
+            'projects' => Project::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function show(Ticket $ticket): Response
     {
         return Inertia::render('Tickets/Show', [
-            'ticket' => $ticket->load('ticketDetail'),
+            'ticket'   => $ticket->load(['ticketDetail', 'project', 'user']),
+            'projects' => Project::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -47,7 +49,7 @@ class TicketController extends Controller
             ProcessTicketAttachment::dispatch($ticket);
         }
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Ticket created successfully.');
     }
 
     public function update(Request $request, Ticket $ticket): RedirectResponse
@@ -60,13 +62,13 @@ class TicketController extends Controller
 
         $ticket->update($request->only('title', 'description', 'project_id'));
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Ticket updated successfully.');
     }
 
     public function destroy(Ticket $ticket): RedirectResponse
     {
         $ticket->delete();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Ticket deleted successfully.');
     }
 }

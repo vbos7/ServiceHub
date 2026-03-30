@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(./vendor/bin/pest tests/Feature/ProjectTest.php)",
-      "Bash(./vendor/bin/pest tests/Feature/)"
-    ]
-  }
-}

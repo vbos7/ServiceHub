@@ -4,12 +4,22 @@ use App\Http\Controllers\{CompanyController, ProjectController, TicketController
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
+Route::get('api-docs', fn () => response()->file(public_path('api-docs/index.html')))->name('api-docs');
+
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', function () {
+        return inertia('Dashboard', [
+            'stats' => [
+                'companies' => \App\Models\Company::count(),
+                'projects'  => \App\Models\Project::count(),
+                'tickets'   => \App\Models\Ticket::count(),
+            ],
+        ]);
+    })->name('dashboard');
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
     Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
@@ -23,6 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
     Route::put('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
     Route::delete('tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+    Route::put('tickets/{ticket}/detail', [\App\Http\Controllers\TicketDetailController::class, 'update'])->name('ticket-detail.update');
     Route::get('user-profile', [UserProfileController::class, 'show'])->name('user-profile.show');
     Route::put('user-profile', [UserProfileController::class, 'update'])->name('user-profile.update');
 });

@@ -23,6 +23,6 @@ class UserProfileController extends Controller
 
         $request->user()->userProfile->update($request->only('phone', 'position'));
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Profile updated successfully.');
     }
 }

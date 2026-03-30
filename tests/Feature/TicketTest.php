@@ -209,3 +209,45 @@ it('should not allow unauthenticated user to list tickets', function () {
     get(route('tickets.index'))
         ->assertRedirect(route('login'));
 });
+
+it('should be able to update ticket detail notes', function () {
+    $user   = User::factory()->create();
+    $ticket = Ticket::factory()->create();
+
+    actingAs($user)
+        ->put(route('ticket-detail.update', $ticket), [
+            'notes' => 'Investigado e resolvido.',
+        ])
+        ->assertRedirect();
+
+    assertDatabaseHas('ticket_details', [
+        'ticket_id' => $ticket->id,
+        'notes'     => 'Investigado e resolvido.',
+    ]);
+});
+
+it('should clear ticket detail notes when set to empty', function () {
+    $user   = User::factory()->create();
+    $ticket = Ticket::factory()->create();
+
+    $ticket->ticketDetail->update(['notes' => 'Nota antiga']);
+
+    actingAs($user)
+        ->put(route('ticket-detail.update', $ticket), [
+            'notes' => null,
+        ])
+        ->assertRedirect();
+
+    assertDatabaseHas('ticket_details', [
+        'ticket_id' => $ticket->id,
+        'notes'     => null,
+    ]);
+});
+
+it('should not allow unauthenticated user to update ticket detail', function () {
+    $ticket = Ticket::factory()->create();
+
+    \Pest\Laravel\put(route('ticket-detail.update', $ticket), [
+        'notes' => 'Tentativa sem login',
+    ])->assertRedirect(route('login'));
+});
